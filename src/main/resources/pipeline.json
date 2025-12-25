@@ -1,0 +1,25 @@
+{
+  "types": {
+    "ImageMeta": {},
+    "JpgImage": { "extends": "ImageMeta" }
+  },
+  "operators": {
+    "source": {
+      "kind": "source",
+      "outputs": { "out": "ImageMeta" }
+    },
+    "denoise": {
+      "kind": "map",
+      "inputs": { "in": "ImageMeta" },
+      "outputs": { "out": "ImageMeta" }
+    },
+    "sink": {
+      "kind": "sink",
+      "inputs": { "in": "JpgImage" }
+    }
+  },
+  "edges": [
+    { "from": "source.out", "to": "denoise.in" },
+    { "from": "denoise.out", "to": "sink.in" }
+  ]
+}
