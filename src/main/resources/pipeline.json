@@ -1,25 +1,45 @@
 {
   "types": {
-    "ImageMeta": {},
-    "JpgImage": { "extends": "ImageMeta" }
+    "ImageMeta": {
+      "javaType": "com.nsu.data.ImageMeta"
+    },
+    "JpgImage": { "extends": "ImageMeta",
+      "javaType": "com.nsu.data.JpgImage"
+    }
   },
   "operators": {
     "source": {
       "kind": "source",
-      "outputs": { "out": "ImageMeta" }
+      "outputs": {
+        "out": {
+          "type": "ImageMeta",
+          "to": "denoise.in"
+        }
+      }
     },
     "denoise": {
       "kind": "map",
-      "inputs": { "in": "ImageMeta" },
-      "outputs": { "out": "ImageMeta" }
+      "inputs": {
+        "in": {
+          "type": "ImageMeta",
+          "from": "source.out"
+        }
+      },
+      "outputs": {
+        "out": {
+          "type": "ImageMeta",
+          "to": "sink.in"
+        }
+      }
     },
     "sink": {
       "kind": "sink",
-      "inputs": { "in": "JpgImage" }
+      "inputs": {
+        "in": {
+          "type": "JpgImage",
+          "from": "denoise.out"
+        }
+      }
     }
-  },
-  "edges": [
-    { "from": "source.out", "to": "denoise.in" },
-    { "from": "denoise.out", "to": "sink.in" }
-  ]
+  }
 }

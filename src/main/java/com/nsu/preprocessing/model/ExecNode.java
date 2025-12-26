@@ -17,10 +17,15 @@ public class ExecNode {
         this.parallelism = def.parallelism != null ? def.parallelism : 1;
 
         if (def.inputs != null) {
-            def.inputs.forEach((k, v) -> inputs.put(k, new Port(k, v)));
+            def.inputs.forEach((k, v) ->
+                    inputs.put(k, new Port(k, v.type))
+            );
         }
         if (def.outputs != null) {
-            def.outputs.forEach((k, v) -> outputs.put(k, new Port(k, v)));
+            def.outputs.forEach((k, v) ->
+                    outputs.put(k, new Port(k, v.type))
+            );
         }
     }
 }
+

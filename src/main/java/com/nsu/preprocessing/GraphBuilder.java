@@ -1,6 +1,5 @@
 package com.nsu.preprocessing;
 
-import com.nsu.preprocessing.model.EdgeDef;
 import com.nsu.preprocessing.model.ExecEdge;
 import com.nsu.preprocessing.model.ExecNode;
 import com.nsu.preprocessing.model.ExecutionGraph;
@@ -14,43 +13,59 @@ public class GraphBuilder {
     public static ExecutionGraph build(GraphDefinition def) {
         ExecutionGraph graph = new ExecutionGraph();
 
-        def.operators.forEach((id, opDef) -> {
-            graph.nodes.put(id, new ExecNode(id, opDef));
+        def.operators.forEach((id, opDef) ->
+                graph.nodes.put(id, new ExecNode(id, opDef))
+        );
+
+        def.operators.forEach((fromOpId, opDef) -> {
+            if (opDef.outputs == null) {
+                return;
+            }
+            ExecNode fromNode = graph.nodes.get(fromOpId);
+            opDef.outputs.forEach((outPortName, outPortDef) -> {
+                if (outPortDef.to == null) {
+                    return;
+                }
+
+                String[] target = outPortDef.to.split("\\.");
+                if (target.length != 2) {
+                    throw new IllegalStateException(
+                            "Некорректная ссылка to: " + outPortDef.to
+                    );
+                }
+                String toOpId = target[0];
+                String inPortName = target[1];
+
+                ExecNode toNode = graph.nodes.get(toOpId);
+                if (toNode == null) {
+                    throw new IllegalStateException(
+                            "Неизвестный оператор: " + toOpId
+                    );
+                }
+                Port outPort = fromNode.outputs.get(outPortName);
+                Port inPort = toNode.inputs.get(inPortName);
+
+                if (outPort == null || inPort == null) {
+                    throw new IllegalStateException(
+                            "Неизвестный порт: " + outPortDef.to
+                    );
+                }
+
+                if (!isTypeCompatible(outPort.type, inPort.type, def.types)) {
+                    throw new IllegalStateException(
+                            "Несовместимые типы: " +
+                                    outPort.type + " -> " + inPort.type
+                    );
+                }
+                graph.edges.add(new ExecEdge(
+                        fromNode,
+                        outPort,
+                        toNode,
+                        inPort,
+                        false
+                ));
+            });
         });
-
-        for (EdgeDef e : def.edges) {
-            String[] from = e.from.split("\\.");
-            String[] to = e.to.split("\\.");
-
-            ExecNode fromNode = graph.nodes.get(from[0]);
-            ExecNode toNode = graph.nodes.get(to[0]);
-
-            if (fromNode == null || toNode == null) {
-                throw new IllegalStateException("Неизвестный узел в ребре");
-            }
-
-            Port outPort = fromNode.outputs.get(from[1]);
-            Port inPort = toNode.inputs.get(to[1]);
-
-            if (outPort == null || inPort == null) {
-                throw new IllegalStateException("Неизвестный порт");
-            }
-
-            // 3. Проверка типов
-            if (!isTypeCompatible(outPort.type, inPort.type, def.types)) {
-                throw new IllegalStateException(
-                        "Несовместимые типы: " + outPort.type + " -> " + inPort.type
-                );
-            }
-
-            graph.edges.add(new ExecEdge(
-                    fromNode,
-                    outPort,
-                    toNode,
-                    inPort,
-                    "loop".equals(e.control)
-            ));
-        }
 
         return graph;
     }
@@ -74,3 +89,4 @@ public class GraphBuilder {
         return false;
     }
 }
+
