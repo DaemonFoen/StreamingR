@@ -5,8 +5,16 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public final class Channel<T> {
-
+    private final Class<T> type;
     private final BlockingQueue<Object> queue = new LinkedBlockingQueue<>();
+
+    public Channel(Class<T> type) {
+        this.type = type;
+    }
+
+    public Class<T> type() {
+        return type;
+    }
 
     public void put(T value) throws InterruptedException {
         queue.put(value);

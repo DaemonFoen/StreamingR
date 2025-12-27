@@ -1,59 +1,101 @@
 package com.nsu.runtime;
 
+import com.nsu.data.ImageMeta;
+import com.nsu.data.JpgImage;
 import com.nsu.preprocessing.model.ExecEdge;
 import com.nsu.preprocessing.model.ExecNode;
 import com.nsu.preprocessing.model.ExecutionGraph;
 import com.nsu.runtime.model.Channel;
+import com.nsu.runtime.model.factory.MapNodeFactory;
+import com.nsu.runtime.model.factory.RuntimeNodeFactory;
+import com.nsu.runtime.model.factory.SinkNodeFactory;
+import com.nsu.runtime.model.factory.SourceNodeFactory;
 import com.nsu.runtime.model.node.RuntimeNode;
 import java.util.*;
 
 public final class RuntimeBuilder {
 
     public static RuntimeGraph build(
-            ExecutionGraph graph,
-            Map<String, Object> implementations
+            ExecutionGraph exec,
+            RuntimeTypeRegistry types
     ) {
         RuntimeGraph runtime = new RuntimeGraph();
 
-        Map<String, Channel<?>> channels = new HashMap<>();
-
-        // создаём каналы
-        for (ExecEdge e : graph.edges) {
-            String key = edgeKey(e);
-            channels.put(key, new Channel<>());
+        // 1. Канал на каждое ребро (тип берём из fromPort)
+        Map<ExecEdge, Channel<?>> channels = new HashMap<>();
+        for (ExecEdge e : exec.edges) {
+            Class<?> cls = types.resolve(e.fromPort.type);
+            channels.put(e, new Channel<>(cls));
         }
 
-        // создаём узлы
-        for (ExecNode n : graph.nodes.values()) {
+        // 2. Узлы
+        for (ExecNode node : exec.nodes.values()) {
 
-            Map<String,Channel<?>> ins = new HashMap<>();
-            Map<String, Channel<?>> outs = new HashMap<>();
+            // input channels по имени порта
+            Map<String, Channel<?>> inputChannels = new HashMap<>();
+            Map<String, Class<?>> inputTypes = new HashMap<>();
 
-            for (ExecEdge e : graph.edges) {
-                if (e.toNode == n) {
-                    ins.put(
+            for (ExecEdge e : exec.edges) {
+                if (e.toNode == node) {
+                    Channel<?> ch = channels.get(e);
+                    inputChannels.put(e.toPort.name, ch);
+                    inputTypes.put(
                             e.toPort.name,
-                            channels.get(edgeKey(e))
-                    );
-                }
-                if (e.fromNode == n) {
-                    outs.put(
-                            e.fromPort.name,
-                            channels.get(edgeKey(e))
+                            types.resolve(e.toPort.type)
                     );
                 }
             }
 
-            RuntimeNode node = (RuntimeNode) implementations.get(n.id);
-            runtime.addNode(node);
+            // output channels по имени порта
+            Map<String, Channel<?>> outputChannels = new HashMap<>();
+            Map<String, Class<?>> outputTypes = new HashMap<>();
+
+            for (ExecEdge e : exec.edges) {
+                if (e.fromNode == node) {
+                    Channel<?> ch = channels.get(e);
+                    outputChannels.put(e.fromPort.name, ch);
+                    outputTypes.put(
+                            e.fromPort.name,
+                            types.resolve(e.fromPort.type)
+                    );
+                }
+            }
+
+            // 3. Выбор factory
+            RuntimeNodeFactory factory = factories.stream()
+                    .filter(f ->
+                            f.kind().equals(node.kind)
+                                    && f.supports(inputTypes, outputTypes)
+                    )
+                    .findFirst()
+                    .orElseThrow(() ->
+                            new IllegalStateException(
+                                    "Нет factory для узла " + node.id +
+                                            " kind=" + node.kind +
+                                            " inputs=" + inputTypes +
+                                            " outputs=" + outputTypes
+                            )
+                    );
+
+            // 4. Создание runtime node
+            RuntimeNode<?, ?> runtimeNode =
+                    factory.create(
+                            node.id,
+                            inputChannels,
+                            outputChannels,
+                            node.config
+                    );
+
+            runtime.addNode(runtimeNode);
         }
 
         return runtime;
     }
 
-    private static String edgeKey(ExecEdge e) {
-        return e.fromNode.id + "." + e.fromPort.name +
-                "->" +
-                e.toNode.id + "." + e.toPort.name;
-    }
+    private static final List<RuntimeNodeFactory> factories = List.of(
+            new SourceNodeFactory<>(ImageMeta.class),
+            new MapNodeFactory<>(ImageMeta.class, ImageMeta.class),
+            new SinkNodeFactory<>(ImageMeta.class)
+    );
 }
+
