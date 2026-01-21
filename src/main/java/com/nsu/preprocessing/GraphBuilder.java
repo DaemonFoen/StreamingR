@@ -1,11 +1,11 @@
 package com.nsu.preprocessing;
 
-import com.nsu.preprocessing.model.ExecEdge;
-import com.nsu.preprocessing.model.ExecNode;
 import com.nsu.preprocessing.model.ExecutionGraph;
+import com.nsu.preprocessing.model.ExecutionGraph.ExecEdge;
+import com.nsu.preprocessing.model.ExecutionGraph.ExecNode;
 import com.nsu.preprocessing.model.GraphDefinition;
+import com.nsu.preprocessing.model.GraphDefinition.TypeDef;
 import com.nsu.preprocessing.model.Port;
-import com.nsu.preprocessing.model.TypeDef;
 import java.util.*;
 
 public class GraphBuilder {
