@@ -30,4 +30,8 @@ public class RuntimeGraph {
             }
         }
     }
+
+    public Map<String, RuntimeNode<?, ?>> getNodes() {
+        return nodes;
+    }
 }
