@@ -8,7 +8,11 @@ public class GraphParser {
 
     private static final ObjectMapper mapper = new ObjectMapper();
 
-    public static GraphDefinition parse(File jsonFile) throws Exception {
-        return mapper.readValue(jsonFile, GraphDefinition.class);
+    public static GraphDefinition parse(File jsonFile) {
+        try {
+            return mapper.readValue(jsonFile, GraphDefinition.class);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }
