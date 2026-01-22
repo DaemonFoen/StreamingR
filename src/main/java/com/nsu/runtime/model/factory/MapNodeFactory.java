@@ -1,8 +1,11 @@
 package com.nsu.runtime.model.factory;
 
+import com.nsu.preprocessing.model.ExecutionGraph.ExecNode;
 import com.nsu.runtime.model.Channel;
+import com.nsu.runtime.model.DynamicFunctionCompiler;
 import com.nsu.runtime.model.node.MapNode;
 import com.nsu.runtime.model.node.RuntimeNode;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -36,17 +39,27 @@ public final class MapNodeFactory<I, O>
     @Override
     @SuppressWarnings("unchecked")
     public RuntimeNode<I, O> create(
-            String id,
+            ExecNode node,
             Map<String, Channel<?>> inputs,
             Map<String, Channel<?>> outputs,
-            Map<String, Object> config
+            List<Object> sourceData
+
     ) {
         Channel<I> in = (Channel<I>) inputs.get("in");
         Channel<O> out = (Channel<O>) outputs.get("out");
 
-        Function<I, O> fn =
-                (Function<I, O>) config.get("fn");
 
-        return new MapNode<>(id, in, out, fn);
+        if (node.funBody == null) {
+            return new MapNode<>(node.id, in, out, v -> (O) v);
+        }
+
+        try {
+            Function<I, O> fn = DynamicFunctionCompiler.compile(
+                    node.funBody, inType, outType
+            );
+            return new MapNode<>(node.id, in, out, fn);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

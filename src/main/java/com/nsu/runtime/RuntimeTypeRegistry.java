@@ -1,6 +1,6 @@
 package com.nsu.runtime;
 
-import com.nsu.preprocessing.model.TypeDef;
+import com.nsu.preprocessing.model.GraphDefinition.TypeDef;
 import java.util.HashMap;
 import java.util.Map;
 

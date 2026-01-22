@@ -8,6 +8,7 @@ import com.nsu.runtime.RuntimeBuilder;
 import com.nsu.runtime.RuntimeTypeRegistry;
 import com.nsu.runtime.model.Channel;
 import com.nsu.runtime.model.factory.RuntimeNodeFactory;
+import com.nsu.runtime.model.factory.SourceDataFactory;
 import com.nsu.runtime.model.node.MapNode;
 import com.nsu.runtime.RuntimeGraph;
 import com.nsu.runtime.model.node.SinkNode;
@@ -19,11 +20,12 @@ import java.util.Map;
 public class Main {
     public static void main(String[] args) throws Exception {
         GraphDefinition def = GraphParser.parse(
-                new File("E:\\Users\\Dmitriy\\IntelliJIDEAProjects\\Streaming\\src\\main\\resources\\pipeline.json")
+                new File("E:\\Users\\Dmitriy\\IntelliJIDEAProjects\\StreamingR\\src\\main\\resources\\pipeline.json")
         );
 
         ExecutionGraph graph = GraphBuilder.build(def);
         RuntimeTypeRegistry registry = new RuntimeTypeRegistry(def.types);
+        Map<String, List<Object>> sourceData = SourceDataFactory.build(def);
 
         System.out.println("Узлы:");
         graph.nodes.values().forEach(n ->
@@ -40,7 +42,7 @@ public class Main {
                 )
         );
 
-        RuntimeGraph graph1 = RuntimeBuilder.build(graph, registry);
+        RuntimeGraph graph1 = RuntimeBuilder.build(graph, registry, sourceData);
 
         graph1.start();
 

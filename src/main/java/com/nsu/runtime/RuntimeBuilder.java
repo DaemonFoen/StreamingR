@@ -2,9 +2,9 @@ package com.nsu.runtime;
 
 import com.nsu.data.ImageMeta;
 import com.nsu.data.JpgImage;
-import com.nsu.preprocessing.model.ExecEdge;
-import com.nsu.preprocessing.model.ExecNode;
 import com.nsu.preprocessing.model.ExecutionGraph;
+import com.nsu.preprocessing.model.ExecutionGraph.ExecEdge;
+import com.nsu.preprocessing.model.ExecutionGraph.ExecNode;
 import com.nsu.runtime.model.Channel;
 import com.nsu.runtime.model.factory.MapNodeFactory;
 import com.nsu.runtime.model.factory.RuntimeNodeFactory;
@@ -17,21 +17,19 @@ public final class RuntimeBuilder {
 
     public static RuntimeGraph build(
             ExecutionGraph exec,
-            RuntimeTypeRegistry types
+            RuntimeTypeRegistry types,
+            Map<String, List<Object>> sourceData
     ) {
         RuntimeGraph runtime = new RuntimeGraph();
 
-        // 1. Канал на каждое ребро (тип берём из fromPort)
         Map<ExecEdge, Channel<?>> channels = new HashMap<>();
         for (ExecEdge e : exec.edges) {
             Class<?> cls = types.resolve(e.fromPort.type);
             channels.put(e, new Channel<>(cls));
         }
 
-        // 2. Узлы
         for (ExecNode node : exec.nodes.values()) {
 
-            // input channels по имени порта
             Map<String, Channel<?>> inputChannels = new HashMap<>();
             Map<String, Class<?>> inputTypes = new HashMap<>();
 
@@ -46,7 +44,6 @@ public final class RuntimeBuilder {
                 }
             }
 
-            // output channels по имени порта
             Map<String, Channel<?>> outputChannels = new HashMap<>();
             Map<String, Class<?>> outputTypes = new HashMap<>();
 
@@ -61,7 +58,6 @@ public final class RuntimeBuilder {
                 }
             }
 
-            // 3. Выбор factory
             RuntimeNodeFactory factory = factories.stream()
                     .filter(f ->
                             f.kind().equals(node.kind)
@@ -77,13 +73,12 @@ public final class RuntimeBuilder {
                             )
                     );
 
-            // 4. Создание runtime node
             RuntimeNode<?, ?> runtimeNode =
                     factory.create(
-                            node.id,
+                            node,
                             inputChannels,
                             outputChannels,
-                            node.config
+                            sourceData.getOrDefault(node.id, List.of())
                     );
 
             runtime.addNode(runtimeNode);
@@ -94,7 +89,7 @@ public final class RuntimeBuilder {
 
     private static final List<RuntimeNodeFactory> factories = List.of(
             new SourceNodeFactory<>(ImageMeta.class),
-            new MapNodeFactory<>(ImageMeta.class, ImageMeta.class),
+            new MapNodeFactory<>(ImageMeta.class, JpgImage.class),
             new SinkNodeFactory<>(ImageMeta.class)
     );
 }

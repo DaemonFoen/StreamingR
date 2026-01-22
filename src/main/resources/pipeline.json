@@ -7,6 +7,32 @@
       "javaType": "com.nsu.data.JpgImage"
     }
   },
+
+  "sources": {
+    "source": {
+      "data": [
+        {
+          "type": "ImageMeta",
+          "value": {
+            "id": "img-1"
+          }
+        },
+        {
+          "type": "ImageMeta",
+          "value": {
+            "id": "img-2"
+          }
+        },
+        {
+          "type": "ImageMeta",
+          "value": {
+            "id": "img-3"
+          }
+        }
+      ]
+    }
+  },
+
   "operators": {
     "source": {
       "kind": "source",
@@ -19,6 +45,7 @@
     },
     "denoise": {
       "kind": "map",
+      "funBody": "return new com.nsu.data.JpgImage(in.id);",
       "inputs": {
         "in": {
           "type": "ImageMeta",
@@ -27,7 +54,7 @@
       },
       "outputs": {
         "out": {
-          "type": "ImageMeta",
+          "type": "JpgImage",
           "to": "sink.in"
         }
       }

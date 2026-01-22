@@ -1,7 +1,9 @@
 package com.nsu.runtime.model.factory;
 
+import com.nsu.preprocessing.model.ExecutionGraph.ExecNode;
 import com.nsu.runtime.model.Channel;
 import com.nsu.runtime.model.node.RuntimeNode;
+import java.util.List;
 import java.util.Map;
 
 public interface RuntimeNodeFactory {
@@ -14,9 +16,9 @@ public interface RuntimeNodeFactory {
     );
 
     RuntimeNode<?, ?> create(
-            String id,
+            ExecNode node,
             Map<String, Channel<?>> inputs,
             Map<String, Channel<?>> outputs,
-            Map<String, Object> config
+            List<Object> sourceData
     );
 }

@@ -1,9 +1,9 @@
 package com.nsu.runtime.model.factory;
 
+import com.nsu.preprocessing.model.ExecutionGraph.ExecNode;
 import com.nsu.runtime.model.Channel;
 import com.nsu.runtime.model.node.RuntimeNode;
 import com.nsu.runtime.model.node.SourceNode;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -27,7 +27,6 @@ public final class SourceNodeFactory<T> implements RuntimeNodeFactory {
             Map<String, Class<?>> inputTypes,
             Map<String, Class<?>> outputTypes
     ) {
-        // Source не имеет входов, имеет ровно один выход assignable к outType
         return inputTypes.isEmpty()
                 && outputTypes.size() == 1
                 && outputTypes.values().stream().allMatch(outType::isAssignableFrom);
@@ -36,17 +35,19 @@ public final class SourceNodeFactory<T> implements RuntimeNodeFactory {
     @Override
     @SuppressWarnings("unchecked")
     public RuntimeNode<Void, T> create(
-            String id,
+            ExecNode node,
             Map<String, Channel<?>> inputs,
             Map<String, Channel<?>> outputs,
-            Map<String, Object> config
+            List<Object> sourceData
     ) {
         Channel<T> out = (Channel<T>) outputs.values().iterator().next();
-        Iterator<T> data = (Iterator<T>) config.get("data");
-        if (data == null) {
+        Iterator<T> data;
+        if (sourceData == null) {
             data = Collections.emptyIterator();
+        } else {
+            data = (Iterator<T>) sourceData.iterator();
         }
-        return new SourceNode<>(id, out, data);
+        return new SourceNode<>(node.id, out, data);
     }
 }
 
